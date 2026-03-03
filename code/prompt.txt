@@ -1,0 +1,2 @@
+Create a simple NodeJS application that prints out "Hallo World" and that calls 
+Claude AI and asks it "How are you doing?".

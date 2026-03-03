@@ -1,0 +1,13 @@
+{
+  "name": "claude-hello-world",
+  "version": "1.0.0",
+  "description": "A simple Node.js app that prints Hello World and calls Claude AI",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "openai": "^4.104.0"
+  }
+}
