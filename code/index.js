@@ -26,8 +26,6 @@ async function askOpenAI(query) {
       ],
     });
 
-    console.log('\nOpenAI response:');
-    console.log(completion.choices[0].message.content);
     return completion.choices[0].message.content;
   } catch (error) {
     console.error('Error calling OpenAI:', error.message);
@@ -50,48 +48,93 @@ console.log('Hallo World');
 //   console.log(response);
 // })();
 
-(async () => {
+// plan-then-execute pattern
 
-  const initialQuery = `
-    I want to build a house. 
-    Create a list of tasks to complete the project. Each task should be the usage of a tool.
+// (async () => {
 
-    # Tools
-    Hands, Hammer, Saw, Drill, Screwdriver
+//   const initialQuery = `
+//     I want to build a house. 
+//     Create a list of tasks to complete the project. Each task should be the usage of a tool.
 
-    # Output
-    The list must be in JSON format. 
-    The JSON must be valid and the list can be empty.
-    Just return JSON, no other text.
+//     # Tools
+//     Hands, Hammer, Saw, Drill, Screwdriver
 
-    # Restrictions
-    You can only use the tools listed above.
-    You can only use the resources listed above.
-    You can only use the tools and resources listed above.
-    You can only use the tools and resources listed above.
+//     # Output
+//     The list must be in JSON format. 
+//     The JSON must be valid and the list can be empty.
+//     Just return JSON, no other text.
 
-    # Example
+//     # Restrictions
+//     You can only use the tools listed above.
+//     You can only use the resources listed above.
+//     You can only use the tools and resources listed above.
+//     You can only use the tools and resources listed above.
 
-    [{
-      "Task": "Gather materials",
-      "Tool": "Hands",
-    },
-    {
-      "Task": "Cut Wood",
-      "Tool": "Saw",
-    }]      
-  `;
-  const response = await askOpenAI(initialQuery);
-  const tasks = JSON.parse(response);
+//     # Example
 
-  for(const task of tasks) { 
-    console.log(`I am going to ${task.Task} using the ${task.Tool} and the ${task.Resource}`);
-    await sleep(1000);
-  }
-  console.log(response);
-})();
+//     [{
+//       "Task": "Gather materials",
+//       "Tool": "Hands",
+//     },
+//     {
+//       "Task": "Cut Wood",
+//       "Tool": "Saw",
+//     }]      
+//   `;
+//   const response = await askOpenAI(initialQuery);
+//   const tasks = JSON.parse(response);
+
+//   for(const task of tasks) { 
+//     console.log(`I am going to ${task.Task} using the ${task.Tool} and the ${task.Resource}`);
+//     await sleep(1000);
+//   }
+//   console.log(response);
+// })();
 
 // Agent Loop
+// while not done:
+// observe → think (LLM) → act → observe result → repeat
+
+(async () => {
+
+  let state = { goal: "build a house", history: [], done: false };
+  while(!state.done) {
+    const nextAction = await askOpenAI(`You are an agent trying to achieve a goal.
+        You have access to these tools: Hands, Hammer, Saw, Drill, Screwdriver
+
+        Respond with JSON only, in one of two formats:
+
+        If you have a next action:
+        { "tool": "<tool_name>", "input": "<input for the tool>", "done": false }
+
+        If the goal is achieved:
+        { "done": true, "result": "<final answer or summary>" }
+
+        Goal: ${state.goal}
+
+        History so far:
+        ${state.history.map(h => `- Called ${h.action.tool}("${h.action.input}") → ${h.observation}`).join('\n') || '(none yet)'}
+
+        What is the next action?
+    `);
+
+    const action = JSON.parse(nextAction);
+    if (action.done) {
+      state.done = true;
+      state.result = action.result;
+      console.log(`done!`);
+      break;
+    }
+
+    const observation = "Was successfull";
+    state =  {
+      ...state,
+      history: [...state.history, { action, observation }],
+    };
+
+    console.log(nextAction);
+  }
+})();
 
 // import Agent from './agent.js';
 
